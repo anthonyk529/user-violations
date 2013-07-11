@@ -1,0 +1,91 @@
+<br />
+<% created_after=''
+created_before='' %>
+<% if @previous_snapshots.length > 0 %>
+	<table>
+		<% if @previous_snapshots.length == 2 %>
+			<tr>
+				<td><%= message('user-violations.snapshotdebut') %></td>
+				<td class="sep"></td>
+				<td>
+					<% if @previous_snapshots[1] %>						
+						<%= human_short_date(@previous_snapshots[1].created_at) %>
+						<% created_after = @previous_snapshots[1].created_at.strftime('%Y-%m-%d') %>
+					<% else %>
+						<%= message('user-violations.nosnapshot') %>
+					<% end %>
+				</td>	
+			</tr>
+		<% end %>
+		<tr>
+			<td><%= message('user-violations.snapshotfin') %></td>
+			<td class="sep"></td>
+			<td>
+				<% if @previous_snapshots[0] %>
+					<%= #@previous_snapshots[0].created_at.strftime('%m/%d/%Y') 
+					%>
+					<%= human_short_date(@previous_snapshots[0].created_at) %>
+					<% created_before = @previous_snapshots[0].created_at.tomorrow.strftime('%Y-%m-%d') %>
+				<% else %>
+					<%= message('user-violations.nosnapshot') %>
+				<% end %>
+			</td>
+		</tr>		
+	</table>
+	<br />
+<% else 
+	created_after=@given_date[1]
+	created_before=@given_date[0]
+ end %>
+	
+<% if @myHash.keys.length>0 %>
+	<table class="data width100" id="res">
+		<thead>							
+			<tr>					
+				<th><h3><%= message('user-violations.users') %></h3></th>
+				<th colspan="5"><h3><%= message('user-violations.violations') %></h3></th>
+				<th><h3><%= message('user-violations.total') %></h3></th>
+			</tr>
+		</thead>
+		<tbody>
+			<% @myHash.each do |name, violationsList| %>			
+				<tr class="<%= cycle 'even', 'odd', :name => "vbu" -%>">
+					<td valign="top" width="30%"
+					<% violationsList.each do |i|
+						if i.to_i>0 %>
+							class="varw"
+							break
+						<% end
+					   end %>	
+					><%= name -%></td>
+					<% violationsList.reverse.each_with_index do |n,index| %>										
+						<% if index<5  %>
+							<td class="small" valign="top" width="10%">											
+								<%= image_tag('priority/' + Severity::KEYS[index] + '.png') %>								
+								<a href='<%= url_for :controller => 'user_violations_list', :action => 'index', :filter_id => @myFilter, :project_id => @myProject_id, :dev => name, :severity => Severity::KEYS[index], :created_before => created_before, :created_after => created_after %>'>
+								<% if n>0 %>	
+									<b><%= n -%></b>
+								<% else %>
+									<%= n %>
+								<% end %>
+								</a>
+							</td>
+						<% else %>
+							<td valign="top" width="10%" >								
+								<a href='<%= url_for :controller => "user_violations_list", :action => "index", :filter_id => @myFilter, :project_id => @myProject_id, :dev => name, :created_before => created_before, :created_after => created_after %>'>
+								<% if n>0 %>
+									<b><%= n -%></b>
+								<% else %>
+									<%= n %>
+								<% end %>
+								</a>
+							</td>
+						<% end; %>							
+					<% end; %>
+				</tr>
+			<% end; %>								
+		</tbody>						
+	</table>
+<% else %>
+	<p><%= message('user-violations.nodata') %></p>
+<% end; %>

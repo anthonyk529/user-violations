@@ -1,0 +1,93 @@
+<% 
+	filter_id = widget_properties['filter']
+	filter = MeasureFilter.find_by_id(filter_id) %>	
+	<% if filter
+		filter.load_criteria_from_data 	
+		filter.set_criteria_value(:qualifiers, 'TRK')		
+		filter.execute(self, :user => current_user)	
+		@widget_title = link_to h(filter.name), {:controller => 'measures', :action => 'filter', :id => filter.id, :display => 'list'}
+		
+		if filter.rows.length>0
+		%>
+			<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+			<% content_for :script do %>			
+				<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>				
+				<script type="text/javascript" src="<%= url_for_static(:plugin => 'userviolations', :path => 'jquery.ui.datepicker-fr.js') -%>"></script>
+				<script type="text/javascript">			 	
+					$j(function() {
+						<% locale = I18n.locale.to_s 
+						if locale.eql?('fr') %>							
+							$j.datepicker.setDefaults( $j.datepicker.regional[ 'fr' ] );
+						<% else %>							
+							$j.datepicker.setDefaults( $j.datepicker.regional[ '' ] );
+						<% end %>
+						$j("#datepickerFin-<%= widget.id %>").datepicker();					
+						$j("#datepickerDeb-<%= widget.id %>").datepicker();
+											
+						$j("#datepickerFin-<%= widget.id %>").datepicker( "option", "maxDate", new Date() ).datepicker( "option", "dateFormat", "yy-mm-dd" );
+						$j("#datepickerDeb-<%= widget.id %>").datepicker( "option", "maxDate", new Date() ).datepicker( "option", "dateFormat", "yy-mm-dd" );
+					});
+				</script>
+				<script type="text/javascript">
+					function validForm(id) {					
+						dateFin = $j("#datepickerFin-"+id).datepicker("getDate")					
+						if (dateFin === null) {							
+							dateFin.datepicker("setDate", new Date() );
+						}
+											
+						dateDebut = $j("#datepickerDeb-"+id).datepicker("getDate")
+						if (dateDebut !== null && dateDebut >= dateFin) {								
+							alert('<%= message('user-violations.datedeberr') %>');
+							return false;
+						}	
+								
+						return true;
+					} 
+				</script>
+			<% end %>			
+			<% result = "result-"+widget.id.to_s %>		
+			<% form_remote_tag :url => { :controller => "user_violations", :action => "index" }, :update => result do %>				
+				<input name="filter" type="hidden" value="<%= filter_id %>" />
+				<table>
+					<tr>
+						<td> <%= message('user-violations.project') %> </td>
+						<td class="sep"></td>
+						<td>
+							<select class="small" id="select-project_<%= widget.id -%>2" name="pr">
+								<option value="0" selected='true'><%= message('user-violations.allprojects') %></option>
+								<% filter.rows.each do |row| %>
+									<option value = <%= row.snapshot.resource_id %>> <%= row.snapshot.resource.name %> </option>
+								<% end; %>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td> <%= message('user-violations.datedeb') %> </td>
+						<td class="sep"></td> 
+						<td>				
+							<input type="text" id="datepickerDeb-<%= widget.id %>" name="dd" class="small" />					
+						</td>
+					</tr>
+					<tr>
+						<td> <%= message('user-violations.datefin') %> </td>
+						<td class="sep"></td>
+						<td> 
+							<input type="text" id="datepickerFin-<%= widget.id %>" name="df" class="small" />
+						</td>
+					</tr>
+					<tfoot>
+					    <tr>
+					      <td colspan="3">
+					      	<% search = message('user-violations.search') %>
+					        <%= submit_tag search, :onClick => "return validForm("+widget.id.to_s+");", :disable_with => "Please wait..." %>
+					      </td>
+					    </tr>
+					</tfoot>
+				</table>
+			<% end %>
+			<div id="result-<%= widget.id.to_s %>"></div>
+		<% else %>
+			<p><%= message('user-violations.noproject') %></p>
+		<% end %>		
+	<% end; %>
+	

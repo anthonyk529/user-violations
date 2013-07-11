@@ -1,0 +1,104 @@
+<% content_for :script do %>
+	<script type="text/javascript">
+		$j(function(){
+   			$j('#issue_check_all').click(function(event) {   
+        		if(this.checked) {            		
+            		$j(':checkbox').each(function() {
+                	this.checked = true;                        
+            	});
+		        }
+		        else {		            
+		            $j(':checkbox').each(function() {
+		                this.checked = false;                        
+		            });
+		        }
+		    });
+		});
+	</script>
+<% end %>
+
+<div id="content" class="with_sidebar">			
+	<% form_tag({:action => 'do_assign', :method => :post}) do -%>		
+		<input type="hidden" name="created_before" value="<%= @created_before %>">
+		<input type="hidden" name="created_after" value="<%= @created_after %>">
+		<input type="hidden" name="dev" value="<%= @dev %>">
+		<input type="hidden" name="filter_id" value="<%= @filter_id %>">
+		<input type="hidden" name="project_id" value="<%= @project_id %>">
+		<input type="hidden" name="severity" value="<%= @severity %>">
+		
+		<table id="issues_table" class="data width100">
+			<thead>
+				<tr>
+					<th>
+						<input type="checkbox" id="issue_check_all" name="issue_check_all" title="<%= message('user-violations.selectall') %>">
+					</th>
+					<th width="1%" nowrap class="column-severity">
+						<%= message('user-violations.severity_abbreviated') %>
+					</th>
+					<th>
+						<%= message('user-violations.rule') %>
+					</th>
+					<th>
+						<%= message('user-violations.description') -%>
+					</th>
+					<th nowrap>
+						<%= message('user-violations.project') -%>
+					</th>
+					<th nowrap>
+						<%= message('user-violations.component') -%>
+					</th>
+					<th class="column-assignee">
+						<%= message('user-violations.assignee') %>
+					</th>
+				</tr>
+	    	</thead>
+	    	<tbody>
+	    		<% @filtered_results.each_with_index do |issue, index|
+	      		%>
+		        	<tr class="<%= cycle('even', 'odd') -%>">
+						<td>
+							<input type="checkbox" name="issues[]" value="<%= issue.key %>">
+						</td>
+						<td width="1%" nowrap>
+							<img src="<%= ApplicationController.root_context -%>/images/priority/<%= issue.severity -%>.png" title="<%= message(issue.severity.downcase).capitalize -%>"/>
+						</td>
+						<td>
+							<%= h (truncate(Rule.by_key_or_id(issue.ruleKey.to_s).name, :length => 50)) %>
+						</td>
+						<td>
+							<a class='open-modal rule-modal issue-detail-link' modal-width='900' href='<%= url_for :controller => 'issue', :action => 'show', :id => issue.key, :modal => true -%>'>
+							<%= h truncate(issue.message, :length => 100) -%></a>
+						</td>
+						<td>
+							<%= h (truncate(Project.by_key(issue.projectKey).name, :length => 100)) -%>
+		          		</td>
+		          		<td>
+		            		<% component = issue.componentKey %>
+							<% if component %>
+								<%= h component -%>						
+							<% end %>
+						</td>
+						<td>
+							<%= h issue.assignee if issue.assignee -%>
+						</td>
+		        	</tr>
+	        	<% end %>
+	        	<% if @filtered_results.empty? %>
+	        		<tr class="even">
+	         	 		<td colspan="<%= 7 -%>"><%= message('user-violations.nodata') -%></td>
+	        		</tr>
+      			<% end %>
+	    	</tbody>	    	
+	    </table>	    
+	    <br/>
+    	<table>    	
+    		<tr>
+    			<td><%= user_select_tag('assignee', :html_id => "user_select_box", :open => false) %></td>    
+    			<td class="sep"></td>
+    			<td><input type="submit" value="<%= message('user-violations.assign') %>" ></td>
+    			<td class="sep"></td>
+    			<td><a href='<%= url_for(:controller => 'dashboard', :action => 'index') %>'><%= message('user-violations.cancel') %></a></td>    					
+    		</tr>
+    	</table>   
+    <% end -%>
+</div>
